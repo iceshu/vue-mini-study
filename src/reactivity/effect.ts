@@ -1,25 +1,43 @@
-let activeEffect;
+import { extend } from "../shared";
+
+let activeEffect, shouldTrack;
 
 class ReactiveEffect {
   private _fn: any;
   deps = [];
+  active = true;
+  onStop?: () => void;
   public scheduler: Function | undefined;
   constructor(fn, scheduler?: Function) {
     this._fn = fn;
     this.scheduler = scheduler;
   }
   run() {
+    if (!this.active) {
+      return this._fn();
+    }
+    shouldTrack = true;
     activeEffect = this;
-    return this._fn();
+
+    const result = this._fn();
+    shouldTrack = false;
+    return result;
   }
   stop() {
-    this.deps.forEach((dep: any) => {
-      dep.delete(this);
-    });
+    if (this.active) {
+      cleanUpEffect(this);
+      if (this.onStop) {
+        this.onStop();
+      }
+      this.active = false;
+    }
+    // if (this.active) {
+    // }
   }
 }
 const targetMap = new Map();
 export function track(target, key) {
+  if (!isTracking()) return;
   let depsMap = targetMap.get(target);
   if (!depsMap) {
     depsMap = new Map();
@@ -31,11 +49,14 @@ export function track(target, key) {
     dep = new Set();
     depsMap.set(key, dep);
   }
-  if (!activeEffect) {
-    return;
-  }
+
+  if (dep.has(activeEffect)) return;
   dep.add(activeEffect);
   activeEffect.deps.push(dep);
+}
+
+function isTracking() {
+  return shouldTrack && activeEffect !== undefined;
 }
 
 export function trigger(target, key) {
@@ -59,6 +80,7 @@ export function trigger(target, key) {
 export function effect(fn, options: any = {}) {
   //fn 需要上来就调用
   const _effect = new ReactiveEffect(fn, options.scheduler);
+  extend(_effect, options);
   _effect.run();
   const runner: any = _effect.run.bind(_effect);
   runner.effect = _effect;
@@ -66,4 +88,10 @@ export function effect(fn, options: any = {}) {
 }
 export function stop(runner) {
   runner.effect.stop();
+}
+function cleanUpEffect(effect: any) {
+  effect.deps.forEach((dep: any) => {
+    dep.delete(effect);
+  });
+  effect.deps.length = 0;
 }
