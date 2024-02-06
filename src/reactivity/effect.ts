@@ -31,8 +31,6 @@ class ReactiveEffect {
       }
       this.active = false;
     }
-    // if (this.active) {
-    // }
   }
 }
 const targetMap = new Map();
@@ -50,12 +48,16 @@ export function track(target, key) {
     depsMap.set(key, dep);
   }
 
+  trackEffects(dep);
+}
+
+export const trackEffects = (dep) => {
   if (dep.has(activeEffect)) return;
   dep.add(activeEffect);
   activeEffect.deps.push(dep);
-}
+};
 
-function isTracking() {
+export function isTracking() {
   return shouldTrack && activeEffect !== undefined;
 }
 
@@ -68,6 +70,10 @@ export function trigger(target, key) {
   if (!dep) {
     return;
   }
+  triggerEffects(dep);
+}
+
+export const triggerEffects = (dep) => {
   for (const effect of dep) {
     if (effect.scheduler) {
       effect.scheduler();
@@ -75,8 +81,7 @@ export function trigger(target, key) {
       effect.run();
     }
   }
-}
-
+};
 export function effect(fn, options: any = {}) {
   //fn 需要上来就调用
   const _effect = new ReactiveEffect(fn, options.scheduler);
