@@ -1,4 +1,5 @@
 import { isObject } from "../shared";
+import { ShapeFlags } from "../shared/shapeFlage";
 import { createComponentInstance, setupComponent } from "./component";
 
 export const render = (vnode, container) => {
@@ -7,9 +8,9 @@ export const render = (vnode, container) => {
 function patch(vnode: any, container: any) {
   //TODO 判断vnode是不是一个element
   const { shapeFlag } = vnode;
-  if (shapeFlag & shapeFlag.ELEMENT) {
+  if (shapeFlag & ShapeFlags.ELEMENT) {
     processElement(vnode, container);
-  } else if (shapeFlag & shapeFlag.STATEFUL_COMPONENT) {
+  } else if (shapeFlag & ShapeFlags.STATEFUL_COMPONENT) {
     processComponent(vnode, container);
   }
 }
@@ -26,7 +27,6 @@ function processElement(vnode: any, container: any) {
   mountElement(vnode, container);
 }
 function setupRenderEffect(instance: any, initialVNode: any, container) {
-  debugger;
   const { proxy } = instance;
   const subTree = instance.render.call(proxy);
   patch(subTree, container);
@@ -35,9 +35,9 @@ function setupRenderEffect(instance: any, initialVNode: any, container) {
 function mountElement(vnode: any, container: any) {
   const el = (vnode.el = document.createElement(vnode.type));
   const { children, shapeFlag } = vnode;
-  if (shapeFlag & shapeFlag.TEXT_CHILDREN) {
+  if (shapeFlag & ShapeFlags.TEXT_CHILDREN) {
     el.textContent = children;
-  } else if (shapeFlag & shapeFlag.ARRAY_CHILDREN) {
+  } else if (shapeFlag & ShapeFlags.ARRAY_CHILDREN) {
     mountChildren(children, el);
   }
 
