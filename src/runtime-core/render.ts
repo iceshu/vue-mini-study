@@ -6,12 +6,12 @@ export const render = (vnode, container) => {
 };
 function patch(vnode: any, container: any) {
   //TODO 判断vnode是不是一个element
-  if (typeof vnode.type === "string") {
+  const { shapeFlag } = vnode;
+  if (shapeFlag & shapeFlag.ELEMENT) {
     processElement(vnode, container);
-  } else if (isObject(vnode.type)) {
+  } else if (shapeFlag & shapeFlag.STATEFUL_COMPONENT) {
     processComponent(vnode, container);
   }
-  console.log(vnode.type);
 }
 function processComponent(vnode: any, container: any) {
   mountComponent(vnode, container);
@@ -26,6 +26,7 @@ function processElement(vnode: any, container: any) {
   mountElement(vnode, container);
 }
 function setupRenderEffect(instance: any, initialVNode: any, container) {
+  debugger;
   const { proxy } = instance;
   const subTree = instance.render.call(proxy);
   patch(subTree, container);
@@ -33,10 +34,10 @@ function setupRenderEffect(instance: any, initialVNode: any, container) {
 }
 function mountElement(vnode: any, container: any) {
   const el = (vnode.el = document.createElement(vnode.type));
-  const { children } = vnode;
-  if (typeof children === "string") {
+  const { children, shapeFlag } = vnode;
+  if (shapeFlag & shapeFlag.TEXT_CHILDREN) {
     el.textContent = children;
-  } else if (Array.isArray(children)) {
+  } else if (shapeFlag & shapeFlag.ARRAY_CHILDREN) {
     mountChildren(children, el);
   }
 
